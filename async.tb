@@ -1,0 +1,186 @@
+module tb_async_fifo;
+ parameter data_width=32;parameter depth=1024;parameter ptr_width=11;
+reg wclk,wrst_n,rclk, rrst_n;
+reg [data_width-1:0] wdata;
+reg wen,ren; 
+wire[data_width-1:0] rdata;
+wire rempty,wfull;
+wire overflow,underflow, almostfull,almostempty;
+integer i;
+ async_fifo #(.depth(depth),.data_width(data_width),.ptr_width(ptr_width)) a1 
+ (.wclk(wclk),.wrst_n(wrst_n),.rclk(rclk),.rrst_n(rrst_n),.wdata(wdata),.wen(wen),.ren(ren),
+ .rdata(rdata),.rempty(rempty),.wfull(wfull),.overflow(overflow),.underflow(underflow),.almostfull(almostfull),.almostempty(almostempty));
+ 
+ initial begin
+
+    wclk = 0;
+    forever #10 wclk = ~wclk; 
+end
+
+initial begin
+    rclk = 0;
+    forever #5 rclk = ~rclk; 
+end
+
+initial begin
+    // Reset the FIFO
+    wrst_n = 0; rrst_n = 0; wen = 0; ren = 0; wdata = 0;
+    #5 wrst_n = 0; rrst_n = 0; 
+    #5 wrst_n = 1; rrst_n = 1; 
+
+    // Test case 1: Write and Read
+   // wen = 1; ren = 1;
+    //wdata = 4'hA; 
+    //#20; 
+    //$display("Test Case 1: Written data = %h, Read data = %h", wdata, rdata);
+
+    // Test case 2: Multiple Writes and Reads
+   // for (i = 0; i < 10; i = i + 1) begin
+     //   if (!wfull) begin
+       //     wdata = i;
+         //   #20; 
+           // $display("Test Case 2: Wrote data = %d", wdata);
+        //end
+ //   end
+
+   /* ren = 1; // Enable reading
+    for (i = 0; i < 10; i = i + 1) begin
+        #20;
+        $display("Test Case 2: Read data = %d", rdata);
+    end*/
+
+    // Test case 3: Full FIFO Test
+    wen = 1; ren=1;
+    for (i = 0; i < depth; i = i + 1) begin
+        if (!wfull) begin
+            wdata = i;
+            #20;
+            $display("Test Case 3: Wrote data = %d", wdata);
+        end
+    end
+    wen = 0; 
+
+    // Test case 4: Empty FIFO Test 
+   /* ren = 1;
+    while (!rempty) begin
+        #20; 
+        $display("Test Case 4: Read data = %d", rdata);
+    end
+    ren = 0; */
+    
+    /*wen = 1;
+    for (i = 100; i < depth; i = i + 1) begin
+        if (!wfull) begin
+            wdata = i;
+            #20;
+            $display("Test Case 3: Wrote data = %d", wdata);
+        end
+    end
+    wen = 0; 
+
+    // Test case 4: Empty FIFO Test 
+    ren = 1;
+    while (!rempty) begin
+        #20; 
+        $display("Test Case 4: Read data = %d", rdata);
+    end
+    ren = 0; */
+    
+
+    // Test case 5: Simultaneous Write and Read
+   /* wen = 1; ren = 1;
+    wdata = 4'hB; 
+    #20; 
+    $display("Test Case 5: Wrote data = %h, Read data = %h", wdata, rdata);
+
+    // Test case 6: Boundary Write/Read 
+    wen = 1;
+    for (i = 0; i < 1000; i = i + 1) begin
+        if (!wfull) begin
+            wdata = i;
+            #20; 
+            $display("Test Case 6: Wrote data = %d", wdata);
+        end
+    end
+    wen = 0; 
+    ren = 1;
+    while (!rempty) begin
+        #20; 
+        $display("Test Case 6: Read data = %d", rdata);
+    end
+    ren = 0; 
+
+    // Test case 7: Write after Reset and Read after Reset
+    wrst_n = 0; 
+    #5 wrst_n = 1; 
+    rrst_n = 0; 
+    #5 rrst_n = 1; 
+    wen = 1; ren = 1;
+    wdata = 4'hC; 
+    #20; 
+    $display("Test Case 7: Written data after reset = %h", wdata);
+    ren = 0;*/
+
+    // Test case 8: Full and Empty Flags Verification
+   /* wen = 1;
+    for (i = 0; i < depth; i = i + 1) begin
+        if (!wfull) begin
+            wdata = i;
+            #20;
+            $display("Test Case 8: Wrote data = %d", wdata);
+        end
+    end
+    wen = 0; 
+
+    ren = 1;
+    while (!rempty) begin
+        #20; 
+        $display("Test Case 8: Read data = %d", rdata);
+    end
+    ren = 0; 
+
+    // Test case 9: Overfill the FIFO   
+    wen = 1;
+    for (i = 0; i < depth + 10; i = i + 1) begin
+        if (!wfull) begin
+            wdata = i;
+            #20; 
+            $display("Test Case 9: Wrote data = %d", wdata);
+        end
+    end
+
+    // Test case 10: Underflow the FIFO  
+    ren = 1;
+    while (!rempty) begin
+        #20;
+        $display("Test Case 10: Read data = %d", rdata);
+    end
+    ren = 0;
+
+    // Test case 11: Randomized Write/Read Sequence   
+    for (i = 0; i < 20; i = i + 1) begin
+        if ($random % 2 == 0) begin
+            wen = 1; 
+            wdata = $random % 16; // Random data
+            #20; 
+            $display("Test Case 11: Wrote random data = %d", wdata);
+        end else begin
+            ren = 1;
+            #20; 
+            $display("Test Case 11: Read random data = %d", rdata);
+        end
+    end
+
+    // Test case 13: Asynchronous reset verification
+    wrst_n = 0; 
+    #10 wrst_n = 1; 
+    rrst_n = 0; 
+    #10 rrst_n = 1; 
+    ren = 1;
+    #20; 
+    $display("Test Case 13: Asynchronous reset verified. Rdata = %h", rdata);*/
+
+    $finish; 
+end
+
+endmodule
